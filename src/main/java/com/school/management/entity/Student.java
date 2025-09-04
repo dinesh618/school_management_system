@@ -1,6 +1,7 @@
 package com.school.management.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.school.management.constant.Constant.*;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -12,6 +13,8 @@ import java.util.List;
 @Entity
 @Table(name = "students")
 @PrimaryKeyJoinColumn(name = "user_id")
+@JsonIgnoreProperties(ignoreUnknown = true)
+
 public class Student extends User {
 
     @NotBlank

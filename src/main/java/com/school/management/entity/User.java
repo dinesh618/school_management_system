@@ -1,5 +1,6 @@
 package com.school.management.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.school.management.constant.Constant.*;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
@@ -79,6 +80,7 @@ public abstract class User implements UserDetails {
 
     // UserDetails implementation
     @Override
+    @JsonIgnore
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }

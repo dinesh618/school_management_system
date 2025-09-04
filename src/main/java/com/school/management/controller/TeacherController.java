@@ -24,7 +24,6 @@ public class TeacherController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Cacheable(value = "teachers", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
     public ResponseEntity<Page<Teacher>> getAllTeachers(Pageable pageable) {
         Page<Teacher> teachers = teacherRepository.findAll(pageable);
         return ResponseEntity.ok(teachers);
@@ -32,15 +31,13 @@ public class TeacherController {
 
     @GetMapping("/active")
     @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
-    @Cacheable(value = "active-teachers")
-    public ResponseEntity<List<Teacher>> getActiveTeachers() {
-        List<Teacher> activeTeachers = teacherRepository.findActiveTeachersByDepartment(null);
+    public ResponseEntity<List<Teacher>> getActiveTeachers(@RequestParam String department ) {
+        List<Teacher> activeTeachers = teacherRepository.findActiveTeachersByDepartment(department);
         return ResponseEntity.ok(activeTeachers);
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER') or hasRole('STUDENT')")
-    @Cacheable(value = "teacher", key = "#id")
     public ResponseEntity<Teacher> getTeacherById(@PathVariable Long id) {
         Optional<Teacher> teacher = teacherRepository.findById(id);
         return teacher.map(ResponseEntity::ok)

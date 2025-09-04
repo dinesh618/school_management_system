@@ -36,7 +36,6 @@ public class AttendanceController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN') or (hasRole('STUDENT') and @attendanceRepository.findById(#id).orElse(null)?.student?.id == authentication.principal.id)")
-    @Cacheable(value = "attendance-record", key = "#id")
     public ResponseEntity<Attendance> getAttendanceById(@PathVariable Long id) {
         Optional<Attendance> attendance = attendanceRepository.findById(id);
         return attendance.map(ResponseEntity::ok)
@@ -91,7 +90,6 @@ public class AttendanceController {
 
     @PostMapping
     @PreAuthorize("hasRole('TEACHER')")
-    @CacheEvict(value = {"attendance", "attendance-by-student", "attendance-by-course", "attendance-by-date", "attendance-by-course-date-range", "attendance-by-student-date-range"}, allEntries = true)
     public ResponseEntity<Attendance> markAttendance(@Valid @RequestBody Attendance attendance, Authentication authentication) {
         // Check if attendance record already exists for this student, course, and date
         if (attendanceRepository.existsByStudentIdAndCourseIdAndDate(

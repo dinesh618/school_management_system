@@ -27,7 +27,6 @@ public class SubmissionController {
 
     @GetMapping
     @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
-    @Cacheable(value = "submissions", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
     public ResponseEntity<Page<Submission>> getAllSubmissions(Pageable pageable) {
         Page<Submission> submissions = submissionRepository.findAll(pageable);
         return ResponseEntity.ok(submissions);
@@ -35,7 +34,6 @@ public class SubmissionController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN') or (hasRole('STUDENT') and @submissionRepository.findById(#id).orElse(null)?.student?.id == authentication.principal.id)")
-    @Cacheable(value = "submission", key = "#id")
     public ResponseEntity<Submission> getSubmissionById(@PathVariable Long id) {
         Optional<Submission> submission = submissionRepository.findById(id);
         return submission.map(ResponseEntity::ok)
@@ -100,7 +98,6 @@ public class SubmissionController {
 
     @PostMapping
     @PreAuthorize("hasRole('STUDENT')")
-    @CacheEvict(value = {"submissions", "submissions-by-student", "submissions-by-assignment", "submissions-by-course", "submissions-by-student-course"}, allEntries = true)
     public ResponseEntity<Submission> createSubmission(@Valid @RequestBody Submission submission) {
         // Check if submission already exists
         if (submissionRepository.existsByStudentIdAndAssignmentId(submission.getStudent().getId(), submission.getAssignment().getId())) {

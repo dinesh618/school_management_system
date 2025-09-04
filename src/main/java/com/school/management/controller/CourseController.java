@@ -32,14 +32,12 @@ public class CourseController {
     }
 
     @GetMapping("/active")
-    @Cacheable(value = "active-courses")
     public ResponseEntity<List<Course>> getActiveCourses() {
         List<Course> activeCourses = courseRepository.findByIsActiveTrue();
         return ResponseEntity.ok(activeCourses);
     }
 
     @GetMapping("/{id}")
-    @Cacheable(value = "course", key = "#id")
     public ResponseEntity<Course> getCourseById(@PathVariable Long id) {
         Optional<Course> course = courseRepository.findById(id);
         return course.map(ResponseEntity::ok)
@@ -79,7 +77,6 @@ public class CourseController {
 
     @PostMapping
     @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
-    @CacheEvict(value = {"courses", "active-courses", "courses-by-teacher", "courses-by-semester-year"}, allEntries = true)
     public ResponseEntity<Course> createCourse(@Valid @RequestBody Course course) {
         // Check if course code already exists
         if (courseRepository.existsByCourseCode(course.getCourseCode())) {

@@ -27,7 +27,7 @@ public class EnrollmentController {
 
     @GetMapping
     @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
-    @Cacheable(value = "enrollments", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
+    //@Cacheable(value = "enrollments", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
     public ResponseEntity<Page<Enrollment>> getAllEnrollments(Pageable pageable) {
         Page<Enrollment> enrollments = enrollmentRepository.findAll(pageable);
         return ResponseEntity.ok(enrollments);
@@ -35,7 +35,7 @@ public class EnrollmentController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN') or (hasRole('STUDENT') and @enrollmentRepository.findById(#id).orElse(null)?.student?.id == authentication.principal.id)")
-    @Cacheable(value = "enrollment", key = "#id")
+    //@Cacheable(value = "enrollment", key = "#id")
     public ResponseEntity<Enrollment> getEnrollmentById(@PathVariable Long id) {
         Optional<Enrollment> enrollment = enrollmentRepository.findById(id);
         return enrollment.map(ResponseEntity::ok)
@@ -44,7 +44,7 @@ public class EnrollmentController {
 
     @GetMapping("/student/{studentId}")
     @PreAuthorize("hasRole('STUDENT') and #studentId == authentication.principal.id or hasRole('TEACHER') or hasRole('ADMIN')")
-    @Cacheable(value = "enrollments-by-student", key = "#studentId")
+    //@Cacheable(value = "enrollments-by-student", key = "#studentId")
     public ResponseEntity<List<Enrollment>> getEnrollmentsByStudent(@PathVariable Long studentId) {
         List<Enrollment> enrollments = enrollmentRepository.findActiveEnrollmentsByStudent(studentId);
         return ResponseEntity.ok(enrollments);
@@ -52,7 +52,7 @@ public class EnrollmentController {
 
     @GetMapping("/course/{courseId}")
     @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
-    @Cacheable(value = "enrollments-by-course", key = "#courseId")
+    //@Cacheable(value = "enrollments-by-course", key = "#courseId")
     public ResponseEntity<List<Enrollment>> getEnrollmentsByCourse(@PathVariable Long courseId) {
         List<Enrollment> enrollments = enrollmentRepository.findActiveEnrollmentsByCourse(courseId);
         return ResponseEntity.ok(enrollments);

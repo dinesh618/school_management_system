@@ -25,14 +25,13 @@ public class AssignmentController {
 
     @GetMapping
     @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
-    @Cacheable(value = "assignments", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
     public ResponseEntity<Page<Assignment>> getAllAssignments(Pageable pageable) {
         Page<Assignment> assignments = assignmentRepository.findAll(pageable);
         return ResponseEntity.ok(assignments);
     }
 
     @GetMapping("/{id}")
-    @Cacheable(value = "assignment", key = "#id")
+    //@Cacheable(value = "assignment", key = "#id")
     public ResponseEntity<Assignment> getAssignmentById(@PathVariable Long id) {
         Optional<Assignment> assignment = assignmentRepository.findById(id);
         return assignment.map(ResponseEntity::ok)
@@ -81,7 +80,6 @@ public class AssignmentController {
 
     @PostMapping
     @PreAuthorize("hasRole('TEACHER')")
-    @CacheEvict(value = {"assignments", "assignments-by-course", "assignments-by-teacher", "assignments-by-type", "upcoming-assignments"}, allEntries = true)
     public ResponseEntity<Assignment> createAssignment(@Valid @RequestBody Assignment assignment) {
         Assignment savedAssignment = assignmentRepository.save(assignment);
         return ResponseEntity.ok(savedAssignment);
