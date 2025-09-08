@@ -2,14 +2,21 @@ package com.school.management.controller;
 
 
 
+import com.school.management.dto.EnrollementDto;
+import com.school.management.entity.Course;
 import com.school.management.entity.Enrollment;
+import com.school.management.entity.Student;
+import com.school.management.repository.CourseRepository;
 import com.school.management.repository.EnrollmentRepository;
+import com.school.management.repository.StudentRepository;
+import exception.CustomException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +31,10 @@ public class EnrollmentController {
 
     @Autowired
     private EnrollmentRepository enrollmentRepository;
+    @Autowired
+    private StudentRepository studentRepository;
+    @Autowired
+    private CourseRepository courseRepository;
 
     @GetMapping
     @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
@@ -68,15 +79,23 @@ public class EnrollmentController {
 
     @PostMapping
     @PreAuthorize("hasRole('STUDENT') or hasRole('ADMIN')")
-    @CacheEvict(value = {"enrollments", "enrollments-by-student", "enrollments-by-course", "enrollments-by-semester-year"}, allEntries = true)
-    public ResponseEntity<Enrollment> createEnrollment(@Valid @RequestBody Enrollment enrollment) {
+    public ResponseEntity<?> createEnrollment(@Valid @RequestBody EnrollementDto enrollementDto) {
         // Check if enrollment already exists
-        if (enrollmentRepository.existsByStudentIdAndCourseId(enrollment.getStudent().getId(), enrollment.getCourse().getId())) {
-            return ResponseEntity.badRequest().build();
+        Course course = courseRepository.findByCourseId(enrollementDto.getCourseId());
+        Student student = studentRepository.findByStudentId(enrollementDto.getStudentId()) ;
+
+        if (enrollmentRepository.existsByStudent_StudentIdAndCourse_id(student.getStudentId(),  course.getId())) {
+             throw new CustomException("already enrolled");
         }
+        Enrollment enrollment = new Enrollment();
+            enrollment.setStudent(student);
+            enrollment.setCourse(course);
+
+              enrollment.setGrade(enrollementDto.getGrade());
+
 
         Enrollment savedEnrollment = enrollmentRepository.save(enrollment);
-        return ResponseEntity.ok(savedEnrollment);
+        return new ResponseEntity<>("enrollment saved successfully", HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")

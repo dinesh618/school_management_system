@@ -1,19 +1,27 @@
 package com.school.management.controller;
 
 
+import com.school.management.constant.ResponseMessage;
+import com.school.management.dto.CourseDto;
 import com.school.management.entity.Course;
+import com.school.management.entity.Teacher;
 import com.school.management.repository.CourseRepository;
+import com.school.management.repository.TeacherRepository;
+import com.school.management.service.CourseService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @RestController
@@ -23,6 +31,14 @@ public class CourseController {
 
     @Autowired
     private CourseRepository courseRepository;
+
+    @Autowired
+    private TeacherRepository teacherRepository;
+
+    @Autowired
+    private CourseService courseService;
+
+
 
     @GetMapping
     @Cacheable(value = "courses", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
@@ -38,14 +54,12 @@ public class CourseController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Course> getCourseById(@PathVariable Long id) {
-        Optional<Course> course = courseRepository.findById(id);
-        return course.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<CourseDto> getCourseById(@PathVariable Long id) {
+      CourseDto  courseDto = courseService.getCourseById(id);
+          return ResponseEntity.ok(courseDto);
     }
 
     @GetMapping("/code/{courseCode}")
-    @Cacheable(value = "course-by-code", key = "#courseCode")
     public ResponseEntity<Course> getCourseByCourseCode(@PathVariable String courseCode) {
         Optional<Course> course = courseRepository.findByCourseCode(courseCode);
         return course.map(ResponseEntity::ok)
@@ -77,14 +91,29 @@ public class CourseController {
 
     @PostMapping
     @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
-    public ResponseEntity<Course> createCourse(@Valid @RequestBody Course course) {
+    public ResponseEntity<ResponseMessage> createCourse(@Valid @RequestBody CourseDto courseDto) {
         // Check if course code already exists
-        if (courseRepository.existsByCourseCode(course.getCourseCode())) {
+        if (courseRepository.existsByCourseCode(courseDto.getCourseCode())) {
             return ResponseEntity.badRequest().build();
         }
 
+        Teacher teacher = teacherRepository.findByTeacherId(Long.valueOf(courseDto.getTeacherId()));
+        Course course = new Course();
+        course.setCourseCode(courseDto.getCourseCode());
+        course.setCourseName(courseDto.getCourseName());
+        course.setDescription(courseDto.getDescription());
+        course.setRoom(courseDto.getRoom());
+        course.setAcademicYear(courseDto.getAcademicYear());
+        course.setCredits(courseDto.getCredits());
+        course.setAcademicYear(courseDto.getAcademicYear());
+        course.setSemester(courseDto.getSemester());
+        course.setMaxStudents(courseDto.getMaxStudents());
+        course.setSemester(courseDto.getSemester());
+        course.setSchedule(courseDto.getSchedule());
+        course.setTeacher(teacher);
+
         Course savedCourse = courseRepository.save(course);
-        return ResponseEntity.ok(savedCourse);
+        return  new ResponseEntity<>( new ResponseMessage("course saved successfully"), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
@@ -119,6 +148,7 @@ public class CourseController {
             // Soft delete - set isActive to false
             Course c = course.get();
             c.setIsActive(false);
+            
             courseRepository.save(c);
             return ResponseEntity.ok().build();
         }

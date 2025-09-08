@@ -12,6 +12,7 @@ import com.school.management.repository.StudentRepository;
 import com.school.management.repository.TeacherRepository;
 import com.school.management.repository.UserRepository;
 import com.school.management.security.JwtUtil;
+import com.school.management.service.NotificationService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +48,9 @@ public class AuthController {
 
     @Autowired
     JwtUtil jwtUtil;
+
+    @Autowired
+    NotificationService notificationService;
 
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
@@ -125,6 +129,9 @@ public class AuthController {
                     .badRequest()
                     .body(new MessageResponse("Error: Invalid role specified!"));
         }
+
+
+        notificationService.sendWelcomeMessage(user.getId(), user.getEmail(), user.getFirstName());
 
         userRepository.save(user);
 

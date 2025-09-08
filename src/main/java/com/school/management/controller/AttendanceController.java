@@ -1,6 +1,13 @@
 package com.school.management.controller;
+import com.school.management.constant.Constant;
+import com.school.management.dto.AttendenceDto;
 import com.school.management.entity.Attendance;
+import com.school.management.entity.Course;
+import com.school.management.entity.Student;
 import com.school.management.repository.AttendanceRepository;
+import com.school.management.repository.CourseRepository;
+import com.school.management.repository.StudentRepository;
+import exception.CustomException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -8,6 +15,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -16,16 +24,22 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/attendance")
+@RequestMapping("/attendance")
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class AttendanceController {
 
     @Autowired
     private AttendanceRepository attendanceRepository;
 
+    @Autowired
+    private StudentRepository studentRepository;
+
+    @Autowired
+     private CourseRepository courseRepository;
     @GetMapping
     @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
     @Cacheable(value = "attendance", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
@@ -36,10 +50,22 @@ public class AttendanceController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN') or (hasRole('STUDENT') and @attendanceRepository.findById(#id).orElse(null)?.student?.id == authentication.principal.id)")
-    public ResponseEntity<Attendance> getAttendanceById(@PathVariable Long id) {
+    public ResponseEntity<AttendenceDto> getAttendanceById(@PathVariable Long id) {
         Optional<Attendance> attendance = attendanceRepository.findById(id);
-        return attendance.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+         if(attendance.isPresent())
+         {
+             AttendenceDto attendeeInformation = new AttendenceDto();
+               attendeeInformation.setCourseId(attendance.get().getCourse().getId());
+             attendeeInformation.setStudentId(attendance.get().getStudent().getStudentId());
+             attendeeInformation.setStatus(attendance.get().getStatus());
+             attendeeInformation.setMarkedBy(attendance.get().getMarkedBy());
+             attendeeInformation.setMarkedAt(attendance.get().getMarkedAt());
+               return  new ResponseEntity<>(attendeeInformation,HttpStatus.OK);
+
+
+         }
+         throw new CustomException("Error to fetch attende detail by Id");
+
     }
 
     @GetMapping("/student/{studentId}")
@@ -90,19 +116,30 @@ public class AttendanceController {
 
     @PostMapping
     @PreAuthorize("hasRole('TEACHER')")
-    public ResponseEntity<Attendance> markAttendance(@Valid @RequestBody Attendance attendance, Authentication authentication) {
+    public ResponseEntity<?> markAttendance(@RequestBody AttendenceDto attendenceDto,Authentication authentication) {
         // Check if attendance record already exists for this student, course, and date
-        if (attendanceRepository.existsByStudentIdAndCourseIdAndDate(
-                attendance.getStudent().getId(), attendance.getCourse().getId(), attendance.getDate())) {
-            return ResponseEntity.badRequest().build();
-        }
+          Student student = studentRepository.findByStudentId(attendenceDto.getStudentId());
+          Course course = courseRepository.findByCourseId(attendenceDto.getCourseId());
+        Attendance attendee  = attendanceRepository.findByMarkedAtAndMarkedBy(attendenceDto.getMarkedAt(),authentication.getName());
 
+
+    if(Objects.isNull(attendee)){
+        Attendance attendance = new Attendance();
         attendance.setMarkedBy(authentication.getName());
+        attendance.setCourse(course);
+        attendance.setStatus(Constant.AttendanceStatus.PRESENT);
+        attendance.setStudent(student);
         attendance.setMarkedAt(LocalDateTime.now());
+        attendance.setRemarks(attendenceDto.getRemarks());
 
         Attendance savedAttendance = attendanceRepository.save(attendance);
-        return ResponseEntity.ok(savedAttendance);
+        return  new ResponseEntity<>("attendance marked successfully", HttpStatus.OK);
     }
+
+    throw new CustomException("attendance already marked");
+
+    }
+
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('TEACHER')")

@@ -25,7 +25,7 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     List<Course> findByIsActiveTrue();
 
-    @Query("SELECT c FROM Course c WHERE c.teacher.id = :teacherId AND c.isActive = true")
+    @Query(value = "SELECT c FROM Course c WHERE c.teacher_id = :teacherId AND c.isActive = true",nativeQuery = true)
     List<Course> findActiveCoursesByTeacher(@Param("teacherId") Long teacherId);
 
     @Query("SELECT c FROM Course c WHERE c.semester = :semester AND c.academicYear = :academicYear AND c.isActive = true")
@@ -36,4 +36,7 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     @Query("SELECT c FROM Course c JOIN c.enrollments e WHERE e.student.id = :studentId AND e.status = 'ENROLLED'")
     List<Course> findCoursesByStudentId(@Param("studentId") Long studentId);
+     @Query(value = "select * from  courses c where c.id =:id",nativeQuery = true )
+    Course findByCourseId(Long id);
+
 }

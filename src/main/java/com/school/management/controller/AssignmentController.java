@@ -1,6 +1,9 @@
 package com.school.management.controller;
+import com.school.management.dto.AssignmentDto;
 import com.school.management.entity.Assignment;
+import com.school.management.entity.Course;
 import com.school.management.repository.AssignmentRepository;
+import com.school.management.repository.CourseRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -23,6 +26,9 @@ public class AssignmentController {
     @Autowired
     private AssignmentRepository assignmentRepository;
 
+    @Autowired
+    private CourseRepository courseRepository;
+
     @GetMapping
     @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
     public ResponseEntity<Page<Assignment>> getAllAssignments(Pageable pageable) {
@@ -31,7 +37,6 @@ public class AssignmentController {
     }
 
     @GetMapping("/{id}")
-    //@Cacheable(value = "assignment", key = "#id")
     public ResponseEntity<Assignment> getAssignmentById(@PathVariable Long id) {
         Optional<Assignment> assignment = assignmentRepository.findById(id);
         return assignment.map(ResponseEntity::ok)
@@ -40,7 +45,6 @@ public class AssignmentController {
 
     @GetMapping("/course/{courseId}")
     @PreAuthorize("hasRole('TEACHER') or hasRole('STUDENT')")
-    @Cacheable(value = "assignments-by-course", key = "#courseId")
     public ResponseEntity<List<Assignment>> getAssignmentsByCourse(@PathVariable Long courseId) {
         List<Assignment> assignments = assignmentRepository.findByCourseIdAndIsActiveTrue(courseId);
         return ResponseEntity.ok(assignments);
@@ -48,7 +52,6 @@ public class AssignmentController {
 
     @GetMapping("/teacher/{teacherId}")
     @PreAuthorize("hasRole('TEACHER') and #teacherId == authentication.principal.id or hasRole('ADMIN')")
-    @Cacheable(value = "assignments-by-teacher", key = "#teacherId")
     public ResponseEntity<List<Assignment>> getAssignmentsByTeacher(@PathVariable Long teacherId) {
         List<Assignment> assignments = assignmentRepository.findAssignmentsByTeacher(teacherId);
         return ResponseEntity.ok(assignments);
@@ -63,14 +66,12 @@ public class AssignmentController {
 
     @GetMapping("/overdue")
     @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
-    @Cacheable(value = "overdue-assignments")
     public ResponseEntity<List<Assignment>> getOverdueAssignments() {
         List<Assignment> assignments = assignmentRepository.findOverdueAssignments(LocalDateTime.now());
         return ResponseEntity.ok(assignments);
     }
 
     @GetMapping("/upcoming")
-    @Cacheable(value = "upcoming-assignments")
     public ResponseEntity<List<Assignment>> getUpcomingAssignments() {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime oneWeekFromNow = now.plusWeeks(1);
@@ -80,9 +81,18 @@ public class AssignmentController {
 
     @PostMapping
     @PreAuthorize("hasRole('TEACHER')")
-    public ResponseEntity<Assignment> createAssignment(@Valid @RequestBody Assignment assignment) {
-        Assignment savedAssignment = assignmentRepository.save(assignment);
-        return ResponseEntity.ok(savedAssignment);
+    public ResponseEntity<Assignment> createAssignment(@Valid @RequestBody AssignmentDto assignmentDto) {
+        Course course = courseRepository.findById(assignmentDto.getCourseId())
+                .orElseThrow(() -> new RuntimeException("Course not found"));
+            Assignment assignment = new Assignment();
+            assignment.setCourse(course);
+            assignment.setTitle(assignmentDto.getTitle());
+            assignment.setDescription(assignmentDto.getDescription());
+            assignment.setDueDate(assignmentDto.getDueDate());
+            assignment.setMaxPoints(assignmentDto.getMaxPoints());
+            assignment.setType(assignmentDto.getType());
+            Assignment savedAssignment = assignmentRepository.save(assignment);
+            return ResponseEntity.ok(savedAssignment);
     }
 
     @PutMapping("/{id}")
@@ -122,7 +132,6 @@ public class AssignmentController {
 
     @GetMapping("/{assignmentId}/submission-count")
     @PreAuthorize("hasRole('TEACHER')")
-    @Cacheable(value = "assignment-submission-count", key = "#assignmentId")
     public ResponseEntity<Long> getSubmissionCount(@PathVariable Long assignmentId) {
         Long submissionCount = assignmentRepository.countSubmissionsByAssignment(assignmentId);
         return ResponseEntity.ok(submissionCount);

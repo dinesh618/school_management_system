@@ -1,6 +1,7 @@
 package com.school.management.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.school.management.constant.Constant.*;
 import jakarta.persistence.*;
 
@@ -25,6 +26,7 @@ public class Attendance {
     private Course course;
 
     @Column(name = "date")
+
     private LocalDate date;
 
     @Enumerated(EnumType.STRING)
@@ -35,6 +37,8 @@ public class Attendance {
     private String remarks;
 
     @Column(name = "marked_at")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+
     private LocalDateTime markedAt;
 
     @Column(name = "marked_by")

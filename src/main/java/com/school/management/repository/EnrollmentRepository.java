@@ -19,7 +19,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
     Optional<Enrollment> findByStudentIdAndCourseId(Long studentId, Long courseId);
 
-    Boolean existsByStudentIdAndCourseId(Long studentId, Long courseId);
+    Boolean existsByStudent_StudentIdAndCourse_id(String studentId, Long courseId);
 
     @Query("SELECT e FROM Enrollment e WHERE e.student.id = :studentId AND e.status = 'ENROLLED'")
     List<Enrollment> findActiveEnrollmentsByStudent(@Param("studentId") Long studentId);

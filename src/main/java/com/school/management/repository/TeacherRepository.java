@@ -29,4 +29,9 @@ public interface TeacherRepository extends JpaRepository<Teacher, Long> {
 
     @Query("SELECT COUNT(c) FROM Course c WHERE c.teacher.id = :teacherId AND c.isActive = true")
     Long countActiveCoursesByTeacher(@Param("teacherId") Long teacherId);
+
+    @Query("SELECT t FROM Teacher t WHERE t.id = :id")
+    Teacher findByTeacherId(@Param("id")Long id);
+
+
 }

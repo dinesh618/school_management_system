@@ -1,6 +1,7 @@
 package com.school.management.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.school.management.constant.Constant.*;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -27,6 +28,7 @@ public class Teacher extends User {
     private java.time.LocalDate hireDate;
 
     @OneToMany(mappedBy = "teacher", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonBackReference
     private List<Course> courses = new ArrayList<>();
 
     // Constructors
