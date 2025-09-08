@@ -5,9 +5,11 @@ import com.school.management.dto.JwtResponse;
 import com.school.management.dto.LoginRequest;
 import com.school.management.dto.MessageResponse;
 import com.school.management.dto.SignupRequest;
+import com.school.management.entity.Department;
 import com.school.management.entity.Student;
 import com.school.management.entity.Teacher;
 import com.school.management.entity.User;
+import com.school.management.repository.DepartmentRepository;
 import com.school.management.repository.StudentRepository;
 import com.school.management.repository.TeacherRepository;
 import com.school.management.repository.UserRepository;
@@ -15,6 +17,8 @@ import com.school.management.security.JwtUtil;
 import com.school.management.service.NotificationService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -24,6 +28,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -45,6 +51,8 @@ public class AuthController {
 
     @Autowired
     PasswordEncoder encoder;
+    @Autowired
+    DepartmentRepository departmentRepository;
 
     @Autowired
     JwtUtil jwtUtil;
@@ -156,4 +164,34 @@ public class AuthController {
         }
         return ResponseEntity.badRequest().body(new MessageResponse("Invalid token"));
     }
+    @PostMapping("/department")
+     public ResponseEntity<?> createDep(@RequestBody Department  department)
+
+
+    {
+        Department dep1 = departmentRepository.findByDepartmentName(department.getDepartment_name());
+               if(Objects.nonNull(dep1))
+                   throw new RuntimeException("department with name already exist");
+        departmentRepository.save(department);
+          return new ResponseEntity<>("department save successfully", HttpStatus.CREATED);
+
+    }
+    @GetMapping("/{id}")
+    public Department getDep(@PathVariable("id") Long id)
+
+
+    {
+        Department dep1 = departmentRepository.findByDepartmentId(id);
+        if(Objects.nonNull(dep1))
+            return dep1;
+         else
+             throw new RuntimeException("unable to load department detail");
+
+
+    }
+
+
 }
+
+
+

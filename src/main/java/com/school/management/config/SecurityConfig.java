@@ -71,7 +71,8 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()   // cover calls without /api prefix
-                        .requestMatchers("/error").permitAll()     // allow Spring Boot error controller
+                        .requestMatchers("/error").permitAll()
+                        // allow Spring Boot error controller
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
